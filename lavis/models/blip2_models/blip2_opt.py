@@ -108,8 +108,8 @@ class Blip2OPT(Blip2Base):
             return_dict=True,
         )
 
-        print("Shape of query output:", query_output.shape)
-        print("First values of query output:", query_output[0,:3,:3])
+        print("Shape of query output:", query_output.last_hidden_state.shape)
+        print("First values of query output:", query_output.last_hidden_state[0,:3,:3])
 
         inputs_opt = self.opt_proj(query_output.last_hidden_state)
         atts_opt = torch.ones(inputs_opt.size()[:-1], dtype=torch.long).to(image.device)
