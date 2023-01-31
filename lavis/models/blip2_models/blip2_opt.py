@@ -97,6 +97,9 @@ class Blip2OPT(Blip2Base):
             image.device
         )
 
+        print("Shape of image_embeds:", image_embeds.shape)
+        print("First values of image_embeds:", image_embeds[0,:3,:3])
+
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
         query_output = self.Qformer.bert(
             query_embeds=query_tokens,
@@ -104,6 +107,9 @@ class Blip2OPT(Blip2Base):
             encoder_attention_mask=image_atts,
             return_dict=True,
         )
+
+        print("Shape of query output:", query_output.shape)
+        print("First values of query output:", query_output[0,:3,:3])
 
         inputs_opt = self.opt_proj(query_output.last_hidden_state)
         atts_opt = torch.ones(inputs_opt.size()[:-1], dtype=torch.long).to(image.device)
@@ -142,6 +148,8 @@ class Blip2OPT(Blip2Base):
             labels=targets,
         )
         loss = outputs.loss
+
+        print("Shape of logits:", outputs.logits.shape)
 
         return {"loss": loss}
 
