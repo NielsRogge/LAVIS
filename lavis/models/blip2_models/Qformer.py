@@ -215,6 +215,10 @@ class BertSelfAttention(nn.Module):
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
 
+        if print_values:
+            print("Shape of attention scroes before softmax:", attention_scores.shape)
+            print("First values of attention scores before softmax:", attention_scores[0,0,:3,:3])
+
         if (
             self.position_embedding_type == "relative_key"
             or self.position_embedding_type == "relative_key_query"
@@ -259,6 +263,10 @@ class BertSelfAttention(nn.Module):
 
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
+
+        if print_values:
+            print("Shape of attention_probs:", attention_probs.shape)
+            print("First values of attention_probs:", attention_probs[0,0,:3,:3])
 
         if is_cross_attention and self.save_attention:
             self.save_attention_map(attention_probs)
