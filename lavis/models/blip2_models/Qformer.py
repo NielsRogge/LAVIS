@@ -175,6 +175,7 @@ class BertSelfAttention(nn.Module):
         encoder_attention_mask=None,
         past_key_value=None,
         output_attentions=False,
+        print_values=False,
     ):
 
         # If this is instantiated as a cross-attention module, the keys
@@ -195,9 +196,19 @@ class BertSelfAttention(nn.Module):
             key_layer = self.transpose_for_scores(self.key(hidden_states))
             value_layer = self.transpose_for_scores(self.value(hidden_states))
 
+        if print_values:
+            print("Key_layer:", key_layer.shape)
+            print("First values of keys:", key_layer[0,0,:3,:3])
+            print("Value_layer:", value_layer.shape)
+            print("First values of values:", value_layer[0,0,:3,:3])
+
         mixed_query_layer = self.query(hidden_states)
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
+
+        if print_values:
+            print("Query_layer:", query_layer.shape)
+            print("First values of queries:", query_layer[0,0,:3,:3])
 
         past_key_value = (key_layer, value_layer)
 
@@ -328,6 +339,7 @@ class BertAttention(nn.Module):
         encoder_attention_mask=None,
         past_key_value=None,
         output_attentions=False,
+        print_values=False,
     ):
         self_outputs = self.self(
             hidden_states,
@@ -337,6 +349,7 @@ class BertAttention(nn.Module):
             encoder_attention_mask,
             past_key_value,
             output_attentions,
+            print_values,
         )
         attention_output = self.output(self_outputs[0], hidden_states)
 
@@ -420,6 +433,7 @@ class BertLayer(nn.Module):
             head_mask,
             output_attentions=output_attentions,
             past_key_value=self_attn_past_key_value,
+            print_values=self.layer_num == 0,
         )
         attention_output = self_attention_outputs[0]
         outputs = self_attention_outputs[1:-1]
