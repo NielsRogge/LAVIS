@@ -257,10 +257,19 @@ class BertSelfAttention(nn.Module):
                 )
 
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
+
+        if print_values:
+            print("Shape of attention scores before attention mask:", attention_scores.shape)
+            print("First values of attention scores before attention mask:", attention_scores[0,0,:3,:3])
+
         if attention_mask is not None:
             # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
             attention_scores = attention_scores + attention_mask
 
+        if print_values:
+            print("Shape of attention scores after attention mask:", attention_scores.shape)
+            print("First values of attention scores after attention mask:", attention_scores[0,0,:3,:3])
+        
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
 
