@@ -143,6 +143,9 @@ class Blip2OPT(Blip2Base):
         inputs_embeds = torch.cat([inputs_opt, inputs_embeds], dim=1)
         attention_mask = torch.cat([atts_opt, opt_tokens.attention_mask], dim=1)
 
+        print("Shape of inputs_embeds:", inputs_embeds.shape)
+        print("First values of inputs_embeds:", inputs_embeds[0,:3,:3])
+
         outputs = self.opt_model(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
@@ -152,6 +155,7 @@ class Blip2OPT(Blip2Base):
         loss = outputs.loss
 
         print("Shape of logits:", outputs.logits.shape)
+        print("First values of logits:", outputs.logits[0,:3,:3])
 
         return {"loss": loss}
 
