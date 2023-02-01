@@ -424,7 +424,14 @@ class BertLayer(nn.Module):
         attention_output = self_attention_outputs[0]
         outputs = self_attention_outputs[1:-1]
 
+        if self.layer_num == 0:
+            print("Shape of self-attention outputs:", attention_output.shape)
+            print("First values of self-attention outputs:", attention_output[0,:3,:3])
+
         present_key_value = self_attention_outputs[-1]
+
+        if self.layer_num == 0:
+            print("Query length:", query_length)
 
         if query_length > 0:
             query_attention_output = attention_output[:, :query_length, :]
@@ -446,12 +453,21 @@ class BertLayer(nn.Module):
                     outputs + cross_attention_outputs[1:-1]
                 )  # add cross attentions if we output attention weights
 
+                if self.layer_num == 0:
+                    print("Query attention output:", query_attention_output.shape)
+                    print("First values of query attention output:", query_attention_output[0,:3,:3])
+
             layer_output = apply_chunking_to_forward(
                 self.feed_forward_chunk_query,
                 self.chunk_size_feed_forward,
                 self.seq_len_dim,
                 query_attention_output,
             )
+
+            if self.layer_num == 0:
+                print("Layer output:", layer_output.shape)
+                print("First values of layer output:", layer_output[0,:3,:3])
+
             if attention_output.shape[1] > query_length:
                 layer_output_text = apply_chunking_to_forward(
                     self.feed_forward_chunk,
