@@ -137,6 +137,8 @@ class Blip2OPT(Blip2Base):
         )
         targets = torch.cat([empty_targets, targets], dim=1)
 
+        print("Input ids:", opt_tokens.input_ids)
+
         inputs_embeds = self.opt_model.model.decoder.embed_tokens(opt_tokens.input_ids)
         inputs_embeds = torch.cat([inputs_opt, inputs_embeds], dim=1)
         attention_mask = torch.cat([atts_opt, opt_tokens.attention_mask], dim=1)
