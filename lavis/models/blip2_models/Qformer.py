@@ -547,6 +547,9 @@ class BertEncoder(nn.Module):
                     encoder_attention_mask,
                 )
             else:
+                if i == 0:
+                    print(f"Shape of hidden states before layer {i}:", hidden_states.shape)
+                    print(f"First values of hidden states before layer {i}:", hidden_states[0,:3,:3])
                 layer_outputs = layer_module(
                     hidden_states,
                     attention_mask,
@@ -557,6 +560,9 @@ class BertEncoder(nn.Module):
                     output_attentions,
                     query_length,
                 )
+                if i == 0:
+                    print(f"Shape of hidden states after layer {i}:", hidden_states.shape)
+                    print(f"First values of hidden states after layer {i}:", layer_outputs[0][0,:3,:3])
 
             hidden_states = layer_outputs[0]
             if use_cache:
