@@ -13,7 +13,7 @@ import tarfile
 import zipfile
 
 import decord
-import webdataset as wds
+# import webdataset as wds
 import numpy as np
 import torch
 from torch.utils.data.dataset import IterableDataset, ChainDataset

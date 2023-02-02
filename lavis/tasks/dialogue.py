@@ -85,8 +85,8 @@ class DialogueTask(BaseTask):
 
 
 # TODO better structure for this.
-from pycocoevalcap.eval import COCOEvalCap
-from pycocotools.coco import COCO
+# from pycocoevalcap.eval import COCOEvalCap
+# from pycocotools.coco import COCO
 from torchvision.datasets.utils import download_url
 
 
