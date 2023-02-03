@@ -1064,6 +1064,9 @@ class OPTForCausalLM(OPTPreTrainedModel):
             if reduction == "none":
                 loss = loss.view(shift_logits.size(0), -1).sum(1)
 
+        print("Shape of logits:", logits.shape)
+        print("First values of logits:", logits[0, :3, :3])
+        
         if not return_dict:
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output

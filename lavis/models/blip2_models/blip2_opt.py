@@ -224,6 +224,10 @@ class Blip2OPT(Blip2Base):
             else:
                 query_embeds = inputs_opt.repeat_interleave(num_beams, dim=0)
 
+            print("Input ids:", input_ids)
+            print("Shape of query embeds:", query_embeds.shape)
+            print("First values of query embeds:", query_embeds[0,:3,:3])
+
             outputs = self.opt_model.generate(
                 input_ids=input_ids,
                 query_embeds=query_embeds,
