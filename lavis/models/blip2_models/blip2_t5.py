@@ -144,6 +144,11 @@ class Blip2T5(Blip2Base):
             inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
             inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
 
+            print("Shape of inputs_embeds:", inputs_embeds.shape)
+            print("First values of inputs_embeds:", inputs_embeds[0, :3, :3])
+            print("Shape of encoder_atts:", encoder_atts.shape)
+            print("Sum of encoder_atts:", encoder_atts.sum())
+
             outputs = self.t5_model(
                 inputs_embeds=inputs_embeds,
                 attention_mask=encoder_atts,
