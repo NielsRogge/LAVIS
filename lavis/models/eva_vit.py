@@ -325,11 +325,17 @@ class VisionTransformer(nn.Module):
         x = self.patch_embed(x)
         batch_size, seq_len, _ = x.size()
 
+        print("Shape of patch embeddings before CLS token: ", x.shape)
+        print("First values of patch embeddings before CLS token: ", x[0, :3, :3])
+
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
         x = torch.cat((cls_tokens, x), dim=1)
         if self.pos_embed is not None:
             x = x + self.pos_embed
         x = self.pos_drop(x)
+
+        print("Shape of patch embeddings: ", x.shape)
+        print("First values of patch embeddings: ", x[0, :3, :3])
 
         rel_pos_bias = self.rel_pos_bias() if self.rel_pos_bias is not None else None
         for blk in self.blocks:
