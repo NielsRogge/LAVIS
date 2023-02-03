@@ -151,9 +151,8 @@ class Blip2T5(Blip2Base):
                 return_dict=True,
                 labels=targets,
             )
-            loss = outputs.loss
 
-            return {"loss": loss}
+            return outputs
 
     @torch.no_grad()
     def generate(

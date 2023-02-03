@@ -150,16 +150,14 @@ class Blip2OPT(Blip2Base):
         inputs_embeds = torch.cat([inputs_opt, inputs_embeds], dim=1)
         attention_mask = torch.cat([atts_opt, opt_tokens.attention_mask], dim=1)
 
-        with self.maybe_autocast():
-            outputs = self.opt_model(
-                inputs_embeds=inputs_embeds,
-                attention_mask=attention_mask,
-                return_dict=True,
-                labels=targets,
-            )
-        loss = outputs.loss
+        outputs = self.opt_model(
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            return_dict=True,
+            labels=targets,
+        )
 
-        return {"loss": loss}
+        return outputs
 
     @torch.no_grad()
     def generate(
