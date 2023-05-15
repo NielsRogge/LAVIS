@@ -191,51 +191,53 @@ class Blip2VicunaInstruct(Blip2Base):
         ).to(image.device)
 
         self.llm_tokenizer.truncation_side = 'right'
-        text_output_tokens = self.llm_tokenizer(
-            [t + self.llm_tokenizer.eos_token for t in samples['text_output']],
-            return_tensors="pt",
-            padding="longest",
-            truncation=True,
-            max_length=self.max_output_txt_len,
-        ).to(image.device)
+        # text_output_tokens = self.llm_tokenizer(
+        #     [t + self.llm_tokenizer.eos_token for t in samples['text_output']],
+        #     return_tensors="pt",
+        #     padding="longest",
+        #     truncation=True,
+        #     max_length=self.max_output_txt_len,
+        # ).to(image.device)
 
-        llm_tokens, input_part_targets_len = self.concat_text_input_output(
-            text_input_tokens.input_ids,
-            text_input_tokens.attention_mask,
-            text_output_tokens.input_ids,
-            text_output_tokens.attention_mask,
-        )
+        # llm_tokens, input_part_targets_len = self.concat_text_input_output(
+        #     text_input_tokens.input_ids,
+        #     text_input_tokens.attention_mask,
+        #     text_output_tokens.input_ids,
+        #     text_output_tokens.attention_mask,
+        # )
 
-        # do not apply loss to the padding
-        targets = llm_tokens['input_ids'].masked_fill(
-            llm_tokens['input_ids'] == self.llm_tokenizer.pad_token_id, -100
-        )
+        # # do not apply loss to the padding
+        # targets = llm_tokens['input_ids'].masked_fill(
+        #     llm_tokens['input_ids'] == self.llm_tokenizer.pad_token_id, -100
+        # )
 
-        # do not apply loss to the text input (i.e., instruction)
-        for i, l in enumerate(input_part_targets_len):
-            targets[i][:l] = -100
+        # # do not apply loss to the text input (i.e., instruction)
+        # for i, l in enumerate(input_part_targets_len):
+        #     targets[i][:l] = -100
 
-        # do not apply loss to the query tokens
-        empty_targets = (
-            torch.ones(atts_llm.size(), dtype=torch.long).to(image.device).fill_(-100)
-        )
-        targets = torch.cat([empty_targets, targets], dim=1)
+        # # do not apply loss to the query tokens
+        # empty_targets = (
+        #     torch.ones(atts_llm.size(), dtype=torch.long).to(image.device).fill_(-100)
+        # )
+        # targets = torch.cat([empty_targets, targets], dim=1)
 
-        inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens['input_ids'])
+        inputs_embeds = self.llm_model.get_input_embeddings()(text_input_tokens['input_ids'])
         inputs_embeds = torch.cat([inputs_llm, inputs_embeds], dim=1)
-        attention_mask = torch.cat([atts_llm, llm_tokens['attention_mask']], dim=1)
+        attention_mask = torch.cat([atts_llm, text_input_tokens['attention_mask']], dim=1)
 
         with self.maybe_autocast():
             outputs = self.llm_model(
                 inputs_embeds=inputs_embeds,
                 attention_mask=attention_mask,
                 return_dict=True,
-                labels=targets,
+                # labels=targets,
             )
 
-        loss = outputs.loss
+        # loss = outputs.loss
 
-        return {"loss": loss}
+        # return {"loss": loss}
+
+        return outputs
 
     @torch.no_grad()
     def generate(
