@@ -176,6 +176,8 @@ class Blip2VicunaInstruct(Blip2Base):
                 encoder_attention_mask=image_atts,
                 return_dict=True,
             )
+        
+        print("First values of query_output:", query_output.last_hidden_state[0, :3, :3])
 
         inputs_llm = self.llm_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
         atts_llm = torch.ones(inputs_llm.size()[:-1], dtype=torch.long).to(image.device)
@@ -224,6 +226,10 @@ class Blip2VicunaInstruct(Blip2Base):
         inputs_embeds = self.llm_model.get_input_embeddings()(text_input_tokens['input_ids'])
         inputs_embeds = torch.cat([inputs_llm, inputs_embeds], dim=1)
         attention_mask = torch.cat([atts_llm, text_input_tokens['attention_mask']], dim=1)
+
+        print("First values of inputs_embeds:", inputs_embeds[0, :3, :3])
+        print("Mean value of inputs_embeds:", inputs_embeds.mean())
+        print("Mean value of attention_mask:", attention_mask.float().mean())
 
         with self.maybe_autocast():
             outputs = self.llm_model(
