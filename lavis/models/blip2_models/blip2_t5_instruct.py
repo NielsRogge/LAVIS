@@ -197,8 +197,8 @@ class Blip2T5Instruct(Blip2Base):
 
             print("First values of inputs_embeds:", inputs_embeds[0, :3, :3])
             print("Mean value of inputs_embeds:", inputs_embeds.mean())
-            print("Mean value of encoder_atts:", encoder_atts.mean())
-            print("Mean value of decoder attention_mask:", output_tokens.attention_mask.mean())
+            print("Mean value of encoder_atts:", encoder_atts.float().mean())
+            print("Mean value of decoder attention_mask:", output_tokens.attention_mask.float().mean())
             
             outputs = self.t5_model(
                 inputs_embeds=inputs_embeds,
