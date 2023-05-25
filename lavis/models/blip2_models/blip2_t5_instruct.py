@@ -198,7 +198,12 @@ class Blip2T5Instruct(Blip2Base):
             )
 
             inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
+
+            print("Mean of inputs_embeds before concatenating:", inputs_embeds.mean())
+
             inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
+
+            print("Mean of inputs_embeds after concatenating:", inputs_embeds.mean())
 
             if fs_embeds is not None:
                 inputs_embeds = torch.cat([fs_embeds, inputs_embeds], dim=1)
