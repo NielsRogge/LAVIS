@@ -165,6 +165,8 @@ class Blip2T5Instruct(Blip2Base):
             )
 
         print("First values of query_output:", query_output.last_hidden_state[0, :3, :3])
+        print("Mean value of query_output:", query_output.last_hidden_state.mean())
+        print("Dtype of query_output:", query_output.last_hidden_state.dtype)
 
         inputs_t5 = self.t5_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
         atts_t5 = torch.ones(inputs_t5.size()[:-1], dtype=torch.long).to(image.device)
