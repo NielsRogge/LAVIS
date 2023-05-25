@@ -122,6 +122,9 @@ class Blip2T5Instruct(Blip2Base):
         # print('-----------------')
 
         image = samples["image"]
+
+        print("First values of image:", image[0, :3, :3, :3])
+
         with self.maybe_autocast():
             image_embeds = self.ln_vision(self.visual_encoder(image))
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
@@ -153,6 +156,8 @@ class Blip2T5Instruct(Blip2Base):
                 encoder_attention_mask=image_atts,
                 return_dict=True,
             )
+
+        print("First values of query_output:", query_output.last_hidden_state[0, :3, :3])
 
         inputs_t5 = self.t5_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
         atts_t5 = torch.ones(inputs_t5.size()[:-1], dtype=torch.long).to(image.device)
@@ -190,6 +195,11 @@ class Blip2T5Instruct(Blip2Base):
                 inputs_embeds = torch.cat([fs_embeds, inputs_embeds], dim=1)
                 encoder_atts = torch.cat([fs_atts, encoder_atts], dim=1)
 
+            print("First values of inputs_embeds:", inputs_embeds[0, :3, :3])
+            print("Mean value of inputs_embeds:", inputs_embeds.mean())
+            print("Mean value of encoder_atts:", encoder_atts.mean())
+            print("Mean value of decoder attention_mask:", output_tokens.attention_mask.mean())
+            
             outputs = self.t5_model(
                 inputs_embeds=inputs_embeds,
                 attention_mask=encoder_atts,
