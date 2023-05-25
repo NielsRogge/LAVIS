@@ -127,6 +127,9 @@ class Blip2T5Instruct(Blip2Base):
 
         with self.maybe_autocast():
             image_embeds = self.ln_vision(self.visual_encoder(image))
+
+        print("First values of image_embeds:", image_embeds[0, :3, :3])
+
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
 
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
