@@ -124,11 +124,15 @@ class Blip2T5Instruct(Blip2Base):
         image = samples["image"]
 
         print("First values of image:", image[0, :3, :3, :3])
+        print("Mean of image:", image.mean())
+        print("Dtype of image:", image.dtype)
 
         with self.maybe_autocast():
             image_embeds = self.ln_vision(self.visual_encoder(image))
 
         print("First values of image_embeds:", image_embeds[0, :3, :3])
+        print("Mean value of image_embeds:", image_embeds.mean())
+        print("Dtype of image_embeds:", image_embeds.dtype)
 
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
 
