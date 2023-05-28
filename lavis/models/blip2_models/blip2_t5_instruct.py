@@ -43,7 +43,8 @@ class Blip2T5Instruct(Blip2Base):
         img_size=224,
         drop_path_rate=0,
         use_grad_checkpoint=False,
-        vit_precision="fp16",
+        # vit_precision="fp16",
+        vit_precision="fp32",
         freeze_vit=True,
         num_query_token=32,
         t5_model="google/flan-t5-xl",
@@ -95,9 +96,9 @@ class Blip2T5Instruct(Blip2Base):
             t5_model, config=t5_config
         )
 
-        for name, param in self.t5_model.named_parameters():
-            param.requires_grad = False
-            param.data = param.data.bfloat16()
+        # for name, param in self.t5_model.named_parameters():
+        #     param.requires_grad = False
+        #     param.data = param.data.bfloat16()
 
         self.t5_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
@@ -127,8 +128,8 @@ class Blip2T5Instruct(Blip2Base):
         print("Mean of image:", image.mean())
         print("Dtype of image:", image.dtype)
 
-        with self.maybe_autocast():
-            image_embeds = self.ln_vision(self.visual_encoder(image))
+        # with self.maybe_autocast():
+        image_embeds = self.ln_vision(self.visual_encoder(image))
 
         print("First values of image_embeds:", image_embeds[0, :3, :3])
         print("Mean value of image_embeds:", image_embeds.mean())
@@ -178,17 +179,17 @@ class Blip2T5Instruct(Blip2Base):
         print("First values of query_output:", query_output.last_hidden_state[0, :3, :3])
         print("Mean value of query_output:", query_output.last_hidden_state.mean())
         print("Dtype of query_output:", query_output.last_hidden_state.dtype)
-        print("Saving query_output tensor...")
-        torch.save(query_output, "query_output.pt")
-        from huggingface_hub import HfApi
+        # print("Saving query_output tensor...")
+        # torch.save(query_output, "query_output.pt")
+        # from huggingface_hub import HfApi
         
-        api = HfApi()
-        api.upload_file(
-            path_or_fileobj="query_output.pt",
-            path_in_repo="query_output.pt",
-            repo_id="nielsr/instructblip-image-embeds",
-            repo_type="dataset",
-        )
+        # api = HfApi()
+        # api.upload_file(
+        #     path_or_fileobj="query_output.pt",
+        #     path_in_repo="query_output.pt",
+        #     repo_id="nielsr/instructblip-image-embeds",
+        #     repo_type="dataset",
+        # )
 
         inputs_t5 = self.t5_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
         atts_t5 = torch.ones(inputs_t5.size()[:-1], dtype=torch.long).to(image.device)
@@ -197,55 +198,55 @@ class Blip2T5Instruct(Blip2Base):
         if self.few_shot_prob > 0 and "few_shot_samples" in samples.keys():
             fs_embeds, fs_atts = self.prepare_few_shot_embeds(samples['few_shot_samples'])
 
-        with self.maybe_autocast(dtype=torch.bfloat16):
-            input_tokens = self.t5_tokenizer(
-                samples["text_input"],
-                padding="longest",
-                truncation=True,
-                max_length=self.max_txt_len,
-                return_tensors="pt",
-            ).to(image.device)
-            output_tokens = self.t5_output_tokenizer(
-                samples["text_output"],
-                padding="longest",
-                truncation=True,
-                max_length=self.max_output_txt_len,
-                return_tensors="pt",
-            ).to(image.device)
+        # with self.maybe_autocast(dtype=torch.bfloat16):
+        input_tokens = self.t5_tokenizer(
+            samples["text_input"],
+            padding="longest",
+            truncation=True,
+            max_length=self.max_txt_len,
+            return_tensors="pt",
+        ).to(image.device)
+        output_tokens = self.t5_output_tokenizer(
+            samples["text_output"],
+            padding="longest",
+            truncation=True,
+            max_length=self.max_output_txt_len,
+            return_tensors="pt",
+        ).to(image.device)
 
-            encoder_atts = torch.cat([atts_t5, input_tokens.attention_mask], dim=1)
+        encoder_atts = torch.cat([atts_t5, input_tokens.attention_mask], dim=1)
 
-            targets = output_tokens.input_ids.masked_fill(
-                output_tokens.input_ids == self.t5_tokenizer.pad_token_id, -100
-            )
+        targets = output_tokens.input_ids.masked_fill(
+            output_tokens.input_ids == self.t5_tokenizer.pad_token_id, -100
+        )
 
-            inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
+        inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
 
-            print("Mean of inputs_embeds before concatenating:", inputs_embeds.mean())
+        print("Mean of inputs_embeds before concatenating:", inputs_embeds.mean())
 
-            inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
+        inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
 
-            print("Mean of inputs_embeds after concatenating:", inputs_embeds.mean())
+        print("Mean of inputs_embeds after concatenating:", inputs_embeds.mean())
 
-            if fs_embeds is not None:
-                inputs_embeds = torch.cat([fs_embeds, inputs_embeds], dim=1)
-                encoder_atts = torch.cat([fs_atts, encoder_atts], dim=1)
+        if fs_embeds is not None:
+            inputs_embeds = torch.cat([fs_embeds, inputs_embeds], dim=1)
+            encoder_atts = torch.cat([fs_atts, encoder_atts], dim=1)
 
-            print("First values of inputs_embeds:", inputs_embeds[0, :3, :3])
-            print("Mean value of inputs_embeds:", inputs_embeds.mean())
-            print("Mean value of encoder_atts:", encoder_atts.float().mean())
-            print("Mean value of decoder attention_mask:", output_tokens.attention_mask.float().mean())
-            
-            outputs = self.t5_model(
-                inputs_embeds=inputs_embeds,
-                attention_mask=encoder_atts,
-                decoder_attention_mask=output_tokens.attention_mask,
-                return_dict=True,
-                labels=targets,
-            )
-            loss = outputs.loss
+        print("First values of inputs_embeds:", inputs_embeds[0, :3, :3])
+        print("Mean value of inputs_embeds:", inputs_embeds.mean())
+        print("Mean value of encoder_atts:", encoder_atts.float().mean())
+        print("Mean value of decoder attention_mask:", output_tokens.attention_mask.float().mean())
+        
+        outputs = self.t5_model(
+            inputs_embeds=inputs_embeds,
+            attention_mask=encoder_atts,
+            decoder_attention_mask=output_tokens.attention_mask,
+            return_dict=True,
+            labels=targets,
+        )
+        loss = outputs.loss
 
-            return outputs
+        return outputs
 
     def prepare_few_shot_embeds(self, samples):
         this_n_fs = random.choices(
@@ -302,19 +303,19 @@ class Blip2T5Instruct(Blip2Base):
         inputs_t5 = self.t5_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
         atts_t5 = torch.ones(inputs_t5.size()[:-1], dtype=torch.long).to(image.device)
 
-        with self.maybe_autocast(dtype=torch.bfloat16):
-            input_tokens = self.t5_tokenizer(
-                text_input,
-                padding="longest",
-                truncation=True,
-                max_length=self.max_txt_len,
-                return_tensors="pt",
-            ).to(image.device)
+        # with self.maybe_autocast(dtype=torch.bfloat16):
+        input_tokens = self.t5_tokenizer(
+            text_input,
+            padding="longest",
+            truncation=True,
+            max_length=self.max_txt_len,
+            return_tensors="pt",
+        ).to(image.device)
 
-            encoder_atts = torch.cat([atts_t5, input_tokens.attention_mask], dim=1)
+        encoder_atts = torch.cat([atts_t5, input_tokens.attention_mask], dim=1)
 
-            inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
-            inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
+        inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
+        inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
 
         if this_n_fs > 1:
             encoder_atts = encoder_atts.reshape(encoder_atts.size(0) // this_n_fs, encoder_atts.size(1) * this_n_fs)
@@ -403,8 +404,8 @@ class Blip2T5Instruct(Blip2Base):
             inputs_t5 = torch.cat(inputs_t5, dim=1)
             atts_t5 = torch.cat(atts_t5, dim=1)
         else:
-            with self.maybe_autocast():
-                image_embeds = self.ln_vision(self.visual_encoder(image))
+            # with self.maybe_autocast():
+            image_embeds = self.ln_vision(self.visual_encoder(image))
             image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
 
             if self.qformer_text_input:
@@ -435,26 +436,26 @@ class Blip2T5Instruct(Blip2Base):
 
         encoder_atts = torch.cat([atts_t5, input_tokens.attention_mask], dim=1)
 
-        with self.maybe_autocast(dtype=torch.bfloat16):
-            inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
-            inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
+        # with self.maybe_autocast(dtype=torch.bfloat16):
+        inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
+        inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
 
-            outputs = self.t5_model.generate(
-                inputs_embeds=inputs_embeds,
-                attention_mask=encoder_atts,
-                do_sample=use_nucleus_sampling,
-                top_p=top_p,
-                temperature=temperature,
-                num_beams=num_beams,
-                max_new_tokens=max_length,
-                min_length=min_length,
-                repetition_penalty=repetition_penalty,
-                length_penalty=length_penalty,
-                num_return_sequences=num_captions,
-            )
-            output_text = self.t5_tokenizer.batch_decode(
-                outputs, skip_special_tokens=True
-            )
+        outputs = self.t5_model.generate(
+            inputs_embeds=inputs_embeds,
+            attention_mask=encoder_atts,
+            do_sample=use_nucleus_sampling,
+            top_p=top_p,
+            temperature=temperature,
+            num_beams=num_beams,
+            max_new_tokens=max_length,
+            min_length=min_length,
+            repetition_penalty=repetition_penalty,
+            length_penalty=length_penalty,
+            num_return_sequences=num_captions,
+        )
+        output_text = self.t5_tokenizer.batch_decode(
+            outputs, skip_special_tokens=True
+        )
 
         return output_text
 
@@ -636,8 +637,8 @@ class Blip2T5Instruct(Blip2Base):
             inputs_t5 = torch.cat(inputs_t5, dim=1)
             atts_t5 = torch.cat(atts_t5, dim=1)
         else:
-            with self.maybe_autocast():
-                image_embeds = self.ln_vision(self.visual_encoder(image))
+            # with self.maybe_autocast():
+            image_embeds = self.ln_vision(self.visual_encoder(image))
             image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
 
             if self.qformer_text_input:
@@ -671,49 +672,49 @@ class Blip2T5Instruct(Blip2Base):
 
         n_cands = len(candidates)
 
-        with self.maybe_autocast(dtype=torch.bfloat16):
-            inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
-            inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
+        # with self.maybe_autocast(dtype=torch.bfloat16):
+        inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
+        inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
 
-            encoder_outputs = self.t5_model.encoder(
-                inputs_embeds=inputs_embeds,
-                attention_mask=encoder_atts,
+        encoder_outputs = self.t5_model.encoder(
+            inputs_embeds=inputs_embeds,
+            attention_mask=encoder_atts,
+        )
+
+        all_losses = []
+        for n in range(n_segments):
+            seg_len = n_cands // n_segments
+            if n == (n_segments - 1):
+                seg_len = n_cands - seg_len * (n_segments - 1)
+
+            # this_encoder_outputs = copy.deepcopy(encoder_outputs)
+            this_encoder_outputs = BaseModelOutput(
+                last_hidden_state=encoder_outputs[0].clone(),
             )
 
-            all_losses = []
-            for n in range(n_segments):
-                seg_len = n_cands // n_segments
-                if n == (n_segments - 1):
-                    seg_len = n_cands - seg_len * (n_segments - 1)
+            this_encoder_outputs['last_hidden_state'] = this_encoder_outputs[0].repeat_interleave(seg_len, dim=0)
+            this_encoder_atts = encoder_atts.repeat_interleave(seg_len, dim=0)
 
-                # this_encoder_outputs = copy.deepcopy(encoder_outputs)
-                this_encoder_outputs = BaseModelOutput(
-                    last_hidden_state=encoder_outputs[0].clone(),
-                )
+            start_i = n * (n_cands // n_segments)
+            end_i = start_i + seg_len
+            this_output_tokens_ids = output_tokens.input_ids[start_i:end_i].repeat(bs, 1)
+            this_output_tokens_atts = output_tokens.attention_mask[start_i:end_i].repeat(bs, 1)
 
-                this_encoder_outputs['last_hidden_state'] = this_encoder_outputs[0].repeat_interleave(seg_len, dim=0)
-                this_encoder_atts = encoder_atts.repeat_interleave(seg_len, dim=0)
+            this_targets = this_output_tokens_ids.masked_fill(this_output_tokens_ids == self.t5_tokenizer.pad_token_id, -100)
 
-                start_i = n * (n_cands // n_segments)
-                end_i = start_i + seg_len
-                this_output_tokens_ids = output_tokens.input_ids[start_i:end_i].repeat(bs, 1)
-                this_output_tokens_atts = output_tokens.attention_mask[start_i:end_i].repeat(bs, 1)
+            outputs = self.t5_model(
+                encoder_outputs=this_encoder_outputs,
+                attention_mask=this_encoder_atts,
+                decoder_attention_mask=this_output_tokens_atts,
+                return_dict=True,
+                labels=this_targets,
+                reduction="none",
+            )
+            loss = outputs.loss
 
-                this_targets = this_output_tokens_ids.masked_fill(this_output_tokens_ids == self.t5_tokenizer.pad_token_id, -100)
-
-                outputs = self.t5_model(
-                    encoder_outputs=this_encoder_outputs,
-                    attention_mask=this_encoder_atts,
-                    decoder_attention_mask=this_output_tokens_atts,
-                    return_dict=True,
-                    labels=this_targets,
-                    reduction="none",
-                )
-                loss = outputs.loss
-
-                loss = loss.reshape(bs, seg_len)
-                # output_class_ranks = torch.argsort(loss, dim=-1)
-                all_losses.append(loss)
+            loss = loss.reshape(bs, seg_len)
+            # output_class_ranks = torch.argsort(loss, dim=-1)
+            all_losses.append(loss)
 
             all_losses = torch.cat(all_losses, dim=-1)
             output_class_ranks = torch.argsort(all_losses, dim=-1)
@@ -787,7 +788,8 @@ class Blip2T5Instruct(Blip2Base):
 
         drop_path_rate = cfg.get("drop_path_rate", 0)
         use_grad_checkpoint = cfg.get("use_grad_checkpoint", False)
-        vit_precision = cfg.get("vit_precision", "fp16")
+        # vit_precision = cfg.get("vit_precision", "fp16")
+        vit_precision = cfg.get("vit_precision", "fp32")
         freeze_vit = cfg.get("freeze_vit", True)
 
         prompt = cfg.get("prompt", "")
