@@ -134,17 +134,17 @@ class Blip2T5Instruct(Blip2Base):
         print("First values of image_embeds:", image_embeds[0, :3, :3])
         print("Mean value of image_embeds:", image_embeds.mean())
         print("Dtype of image_embeds:", image_embeds.dtype)
-        print("Saving image_embeds tensor...")
-        torch.save(image_embeds, "image_embeds.pt")
-        from huggingface_hub import HfApi
+        # print("Saving image_embeds tensor...")
+        # torch.save(image_embeds, "image_embeds.pt")
+        # from huggingface_hub import HfApi
         
-        api = HfApi()
-        api.upload_file(
-            path_or_fileobj="image_embeds.pt",
-            path_in_repo="image_embeds.pt",
-            repo_id="nielsr/instructblip-image-embeds",
-            repo_type="dataset",
-        )
+        # api = HfApi()
+        # api.upload_file(
+        #     path_or_fileobj="image_embeds.pt",
+        #     path_in_repo="image_embeds.pt",
+        #     repo_id="nielsr/instructblip-image-embeds",
+        #     repo_type="dataset",
+        # )
 
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
 
