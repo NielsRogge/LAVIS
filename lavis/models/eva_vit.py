@@ -441,7 +441,7 @@ def create_eva_vit_g(img_size=224,drop_path_rate=0.4,use_checkpoint=False, preci
 
     print("Precision:", precision)
     
-    if precision == "fp16":
-#         model.to("cuda") 
-        convert_weights_to_fp16(model)
+#     if precision == "fp16":
+# #         model.to("cuda") 
+#         convert_weights_to_fp16(model)
     return model

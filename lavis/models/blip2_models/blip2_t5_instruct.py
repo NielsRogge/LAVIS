@@ -63,6 +63,8 @@ class Blip2T5Instruct(Blip2Base):
 
         self.tokenizer = self.init_tokenizer(truncation_side="left")
 
+        print("ViT precision:", vit_precision)
+
         self.visual_encoder, self.ln_vision = self.init_vision_encoder(
             vit_model, img_size, drop_path_rate, use_grad_checkpoint, vit_precision
         )
