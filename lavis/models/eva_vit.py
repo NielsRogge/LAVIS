@@ -415,7 +415,7 @@ def convert_weights_to_fp16(model: nn.Module):
     model.apply(_convert_weights_to_fp16)
     
     
-def create_eva_vit_g(img_size=224,drop_path_rate=0.4,use_checkpoint=False,precision="fp16"):
+def create_eva_vit_g(img_size=224,drop_path_rate=0.4,use_checkpoint=False, precision="fp16"):
     model = VisionTransformer(
         img_size=img_size,
         patch_size=14,
@@ -438,6 +438,8 @@ def create_eva_vit_g(img_size=224,drop_path_rate=0.4,use_checkpoint=False,precis
     
     incompatible_keys = model.load_state_dict(state_dict, strict=False)
 #     print(incompatible_keys)
+
+    print("Precision:", precision)
     
     if precision == "fp16":
 #         model.to("cuda") 
