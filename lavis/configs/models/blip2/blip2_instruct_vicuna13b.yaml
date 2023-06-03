@@ -15,14 +15,14 @@ model:
   image_size: 224
   drop_path_rate: 0
   use_grad_checkpoint: False
-  vit_precision: "fp16"
+  vit_precision: "fp32"
   freeze_vit: True
 
   # Q-Former
   num_query_token: 32
 
   # path to Vicuna checkpoint
-  llm_model: "./llm/vicuna-13b"
+  llm_model: "/home/niels/python_projects/checkpoints/FastChat/vicuna-13b"
 
   # generation configs
   prompt: ""
