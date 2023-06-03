@@ -792,6 +792,9 @@ class Blip2T5Instruct(Blip2Base):
         use_grad_checkpoint = cfg.get("use_grad_checkpoint", False)
         # vit_precision = cfg.get("vit_precision", "fp16")
         vit_precision = cfg.get("vit_precision", "fp32")
+        print("ViT precision from config:", vit_precision)
+        print("Setting to fp32...")
+        vit_precision = "fp32"
         freeze_vit = cfg.get("freeze_vit", True)
 
         prompt = cfg.get("prompt", "")
