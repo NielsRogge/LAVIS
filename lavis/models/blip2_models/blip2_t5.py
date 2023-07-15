@@ -102,11 +102,13 @@ class Blip2T5(Blip2Base):
     def forward(self, samples):
         image = samples["image"]
 
-        with self.maybe_autocast():
-            image_embeds = self.ln_vision(self.visual_encoder(image))
+        # with self.maybe_autocast():
+        image_embeds = self.ln_vision(self.visual_encoder(image))
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
         )
+
+        print("First values of image_embeds:", image_embeds[0, :3, :3])
 
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
         query_output = self.Qformer.bert(
@@ -186,8 +188,8 @@ class Blip2T5(Blip2Base):
         """
         image = samples["image"]
 
-        with self.maybe_autocast():
-            image_embeds = self.ln_vision(self.visual_encoder(image))
+        # with self.maybe_autocast():
+        image_embeds = self.ln_vision(self.visual_encoder(image))
         image_embeds = image_embeds.float()
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
@@ -259,8 +261,8 @@ class Blip2T5(Blip2Base):
         **kwargs
     ):
         image = samples["image"]
-        with self.maybe_autocast():
-            image_embeds = self.ln_vision(self.visual_encoder(image))
+        # with self.maybe_autocast():
+        image_embeds = self.ln_vision(self.visual_encoder(image))
         image_embeds = image_embeds.float()
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
