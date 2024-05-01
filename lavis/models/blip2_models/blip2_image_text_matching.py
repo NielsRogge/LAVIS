@@ -54,8 +54,8 @@ class Blip2ITM(Blip2Qformer):
         image = samples["image"]
         caption = samples["text_input"]
 
-        with self.maybe_autocast():
-            image_embeds = self.ln_vision(self.visual_encoder(image))
+        # with self.maybe_autocast():
+        image_embeds = self.ln_vision(self.visual_encoder(image))
         image_embeds = image_embeds.float()
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
